@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sequence-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sequence-generator
+  template:
+    metadata:
+      labels:
+        app: sequence-generator
+    spec:
+      containers:
+        - name: sequence-generator
+          image: sequence-generator
+          imagePullPolicy: Never
+          env:
+            - name: MYSQL_HOST
+              value: "mysql"
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_DB_NAME
+              value: "sequence_generator"
+            - name: MYSQL_USER
+              value: "root"
+            - name: MYSQL_PASSWORD
+              value: ""
+            - name: EUREKA_HOST
+              value: "service-registry"
+          ports:
+            - containerPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sequence-generator
+spec:
+  selector:
+    app: sequence-generator
+  ports:
+    - port: 8083
+      targetPort: 8083
