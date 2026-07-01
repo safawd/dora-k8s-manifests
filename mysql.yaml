@@ -1,8 +1,33 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-scripts
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS user_service;
+    CREATE DATABASE IF NOT EXISTS account_service;
+    CREATE DATABASE IF NOT EXISTS sequence_generator;
+    CREATE DATABASE IF NOT EXISTS transaction_service;
+    CREATE DATABASE IF NOT EXISTS fund_transfer_service;
+---
+apiVersion: v1
+kind: Service
 metadata:
   name: mysql
 spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: mysql
   replicas: 1
   selector:
     matchLabels:
@@ -22,14 +47,20 @@ spec:
               value: "yes"
           ports:
             - containerPort: 3306
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-spec:
-  selector:
-    app: mysql
-  ports:
-    - port: 3306
-      targetPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: mysql-init-scripts
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
