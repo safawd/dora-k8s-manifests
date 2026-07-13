@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: sequence-generator
-          image: sequence-generator
+          image: sequence-generator:broken
           imagePullPolicy: Never
           env:
             - name: MYSQL_HOST
